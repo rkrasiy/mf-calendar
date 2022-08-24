@@ -1,4 +1,5 @@
 import {useState, useRef, useEffect } from 'react';
+import Button from './Button';
 import {AiOutlineRight, 
     AiOutlineLeft,
     AiOutlineAppstoreAdd,
@@ -21,6 +22,7 @@ function Calendar() {
        // console.log("enter")
         //must be checked if the month has been changed
         const dayPosition = dayFocus ? dayFocus : today.getDate();
+        console.log(dayPosition)
         let scrollLeft;     
         
         //Bad part !!!!
@@ -31,7 +33,14 @@ function Calendar() {
         }else{
             scrollLeft = dayPosition * w
         }
+       
+        window.dragscroll.reset();
 
+        var SETTINGS = {
+			navBarTravelling: false,
+			navBarTravelDirection: "",
+			navBarTravelDistance: 400
+		};
 
        // console.log(dayPosition)
         document.getElementById('slider').scrollLeft = scrollLeft
@@ -45,27 +54,12 @@ function Calendar() {
     
 
     const todayIso = today.toISOString().split("T")[0]
-    //const dd = today.getDate();
-    // console.log("actual day", dd)
-    // console.log(date)
-    // console.log(today)
+
     const MM = date.getMonth();
     const YY = date.getFullYear();
-
-    // const initMonthDay = 1;
-    // const lastMonthDay = daysInMonth(date.getMonth(), date.getFullYear());
-    // const startMonthWeekday = whichWeekday(date.getMonth(),  date.getFullYear())
-    //date.setHours(23,59,0)
-    // console.log(initMonthDay, lastMonthDay)
-    // console.log('Weekday',startMonthWeekday )
-
-   // const prevMonthDays = fillArray( startMonthWeekday )
-    //const thisMonthDays = fillArray(daysInMonth(date.getMonth(), date.getFullYear()))
-
-    const calendarMonth = fillArray(daysInMonth(date.getMonth(), date.getFullYear()))
-   // console.log(thisMonthDays)
-    //  let days = getSevenDays()
-    //console.log("First weekday of month: ", date.getDay(), weekDays[date.getDay()]);
+    
+    const calendarMonth = fillMonth(MM, YY)
+    
     const sliderLeft = () => {
         let slider = document.getElementById('slider')
         slider.scrollLeft = slider.scrollLeft  - (7 * w)
@@ -79,34 +73,40 @@ function Calendar() {
             <div className="container mx-auto p-4">
                 <h1 className='text-center text-3xl mb-1 border-b-1 pb-4'>My Perfect Calendar</h1>
                 <div className='container flex items-center justify-between mb-4'>
-                    <button onClick={()=>{
-                        console.log("menu")
-                    }}>
+                    <Button onclick={
+                            ()=>{
+                                console.log("menu")
+                            }
+                        }>
                         <AiOutlineAppstoreAdd size={25}/>
-                    </button>
+                    </Button>
                     <div className='flex justify-center flex-col'>
                         
                         <div className='flex h-[50px] items-center'>
-                            <button onClick={()=>{
-                                const m = date.getMonth()
-                                const y = date.getFullYear()
-                                setDate(new Date(`${y}/${m - 1}/1`))
-                                setDayFocus(null)
-                            }}>
-                                <AiOutlineCaretLeft size={15}/>
-                            </button> 
+                            <Button onclick={
+                                    ()=>{
+                                        const m = date.getMonth()
+                                        const y = date.getFullYear()
+                                        setDate(new Date(`${y}/${m - 1}/1`))
+                                        setDayFocus(null)
+                                    }
+                                }>
+                                <AiOutlineCaretLeft size={15} />
+                            </Button> 
                             <div className="text-center p-4 text-xl font-semibold text-gray-600">
                                 {monthNames[date.getMonth()]}
                                 <p className='block text-black text-sm font-thin'>{date.getFullYear()}</p>
                             </div>
-                            <button onClick={()=>{
-                                const m = date.getMonth()
-                                const y = date.getFullYear()
-                                setDate(new Date(`${y}/${m + 2}/1`))
-                                setDayFocus(null)
-                            }}>
+                            <Button onclick={
+                                    ()=>{
+                                        const m = date.getMonth()
+                                        const y = date.getFullYear()
+                                        setDate(new Date(`${y}/${m + 2}/1`))
+                                        setDayFocus(null)
+                                    }
+                                }>
                                 <AiOutlineCaretRight size={15}/>
-                            </button>
+                            </Button>
                         </div>
                         {/* <div className='font-light text-xs relative'>
                             <button 
@@ -136,42 +136,42 @@ function Calendar() {
                     </button>
                 </div>
                 <div className='relative flex items-center justify-between'>
-                
-                   <button onClick={sliderLeft} >
+                   <Button onclick={sliderLeft}>
                         <AiOutlineLeft size={25}/>
-                   </button>
+                    </Button>
                     <div className="w-full flex flex-row gap-4 overflow-x-scroll snap-mandatory snap-x scroll scroll-smooth pb-4 pl-2 pr-2 max-w-[810px] styled-scrollbar"
                             id='slider'
                             onScroll={()=> {
                                // console.log(tableRef.current?.scrollLeft)
                             }}
                             ref={tableRef}>
-                        {calendarMonth.map(day => {
-                            const eDate = new Date (YY, MM , day);
-                            const dd = eDate.toISOString().split("T")[0]
+                        {calendarMonth.map( (date, i) => {
+                            const d = new Date(date)
+                            const weekday = weekDays[d.getDay()]
+                            const day = d.getDate();
                             let classes = "";
-                            if(dd === todayIso){
+                            if(date === todayIso){
                                 classes = 'text-red-600 font-semibold'
                             }else{
                                 classes = 'font-light'
                             }
-                           // console.log(dd === todayIso, dd, todayIso)
                             return <div 
                                 key={day} 
                                 onClick={() => {
-                                    setDayFocus(eDate.getDate())
-                                   // console.log('C', dayFocus)
+                                    setDayFocus(day)
                                 }}
+                                dateTime={date}
                                 className={`p-8 border border-slate-900 flex flex-col items-center justify-center cursor-pointer rounded-lg snap-center snap-always min-w-[100px] ${classes}`}>
-                                    <p className="text-4xl">{eDate.getDate()}</p> 
-                                    <p>{weekDays[eDate.getDay()]}</p>   
+                                    <p className="text-4xl">{day}</p> 
+                                    <p>{weekday}</p>   
                             </div>
                         } )
                         }
                     </div>
-                    <button onClick={sliderRight}>
-                        <AiOutlineRight size={25}/>
-                    </button>
+                    <Button onclick={sliderRight}>
+                       <AiOutlineRight size={25}/>
+                    </Button>
+                    
                 </div>
             </div>
         </>
@@ -221,6 +221,14 @@ function daysInMonth(month, year) {
 }
 function fillArray(n = 0) {
     return Array(n).fill().map((_, i) => i + 1)
+}
+
+function fillMonth(month, year){
+    const n = daysInMonth(month, year);
+    return Array(n).fill().map((_, index) => {
+        const d = new Date(year, month , index + 1, 2, 0 , 0)
+        return d.toISOString().split("T")[0]
+    })
 }
 
 function whichWeekday(month, year) {
