@@ -15,14 +15,16 @@ function Calendar() {
     const [ date, setDate ] = useState(new Date());
     const [ dayFocus, setDayFocus ] = useState();
     const [dropdown, setDropdown] = useState(false)
+    const [ position, setPosition] = useState(0)
+
     let firstLoad = true;
     const w = 116
 
     useEffect(() => {
        // console.log("enter")
         //must be checked if the month has been changed
-        const dayPosition = dayFocus ? dayFocus : today.getDate();
-        console.log(dayPosition)
+        const dayPosition = today.getDate();
+
         let scrollLeft;     
         
         //Bad part !!!!
@@ -33,22 +35,41 @@ function Calendar() {
         }else{
             scrollLeft = dayPosition * w
         }
-       
-        window.dragscroll.reset();
-
-        var SETTINGS = {
-			navBarTravelling: false,
-			navBarTravelDirection: "",
-			navBarTravelDistance: 400
-		};
-
-       // console.log(dayPosition)
-        document.getElementById('slider').scrollLeft = scrollLeft
+    
+       sliderRef.current.scrollLeft = scrollLeft
+       //setPosition(scrollLeft)
+       console.log("Start: ", scrollLeft)
     // Actualiza el título del documento usando la API del navegador
         
     });
 
-    const tableRef = useRef(null);
+    const mouseMoveHandler = function(e){
+        console.log("moved", position)
+       // const old = sliderRef.current.scrollLeft
+        // const dx = e.clientX - position
+        // sliderRef.current.scrollLeft = dx
+        // setPosition(dx)
+      // setPosition( e.clientX)
+      sliderRef.current.scrollLeft +=  e.clientX - 273
+    }
+
+    const mouseUpHandler = function(e){
+        document.removeEventListener('mousemove', mouseMoveHandler)
+        document.removeEventListener('mouseup', mouseUpHandler)
+    }
+
+    const mouseDownHandler = function(e){
+        const f = e.clientX - 273
+        const newPos = f + position
+        setPosition( newPos )
+        console.log("new: ", position)
+      // setPosition(e.screenX)
+        document.addEventListener('mousemove', mouseMoveHandler)
+        document.addEventListener('mouseup', mouseUpHandler)
+    }
+    //console.log('mouse',  position)
+
+    const sliderRef = useRef(null);
 
     const userPreferedFirstWeekday = 1;
     
@@ -139,12 +160,11 @@ function Calendar() {
                    <Button onclick={sliderLeft}>
                         <AiOutlineLeft size={25}/>
                     </Button>
-                    <div className="w-full flex flex-row gap-4 overflow-x-scroll snap-mandatory snap-x scroll scroll-smooth pb-4 pl-2 pr-2 max-w-[810px] styled-scrollbar"
+                    <div className="w-full flex flex-row gap-4 overflow-x-scroll pb-4 pl-2 pr-2 max-w-[810px] styled-scrollbar cursor-grabbing"
                             id='slider'
-                            onScroll={()=> {
-                               // console.log(tableRef.current?.scrollLeft)
-                            }}
-                            ref={tableRef}>
+                            ref={sliderRef}
+                            onMouseDown={mouseDownHandler}
+                            >
                         {calendarMonth.map( (date, i) => {
                             const d = new Date(date)
                             const weekday = weekDays[d.getDay()]
@@ -157,11 +177,11 @@ function Calendar() {
                             }
                             return <div 
                                 key={day} 
-                                onClick={() => {
-                                    setDayFocus(day)
-                                }}
+                                // onClick={() => {
+                                //     setDayFocus(day)
+                                // }}
                                 dateTime={date}
-                                className={`p-8 border border-slate-900 flex flex-col items-center justify-center cursor-pointer rounded-lg snap-center snap-always min-w-[100px] ${classes}`}>
+                                className={`p-8 border border-slate-900 flex flex-col items-center justify-center rounded-lg  min-w-[100px] ${classes}`}>
                                     <p className="text-4xl">{day}</p> 
                                     <p>{weekday}</p>   
                             </div>
