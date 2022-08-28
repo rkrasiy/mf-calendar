@@ -14,8 +14,15 @@ function Calendar() {
     const today = new Date();
     const [ date, setDate ] = useState(new Date());
     const [ dayFocus, setDayFocus ] = useState();
-    const [dropdown, setDropdown] = useState(false)
-    const [ position, setPosition] = useState(0)
+    const [ dropdown, setDropdown] = useState(false);
+    const todayIso = today.toISOString().split("T")[0]
+    const MM = date.getMonth();
+    const YY = date.getFullYear();
+    
+    const [ selected, setSelected ] = useState(today.getDate())
+
+    const calendarMonth = fillMonth(MM, YY)
+    let controller = ""
 
     let firstLoad = true;
     const w = 116
@@ -24,7 +31,6 @@ function Calendar() {
        // console.log("enter")
         //must be checked if the month has been changed
         const dayPosition = today.getDate();
-
         let scrollLeft;     
         
         //Bad part !!!!
@@ -35,52 +41,56 @@ function Calendar() {
         }else{
             scrollLeft = dayPosition * w
         }
-    
+
        sliderRef.current.scrollLeft = scrollLeft
-       //setPosition(scrollLeft)
-       console.log("Start: ", scrollLeft)
     // Actualiza el título del documento usando la API del navegador
         
-    });
+    },[]);
 
-    const mouseMoveHandler = function(e){
-        console.log("moved", position)
-       // const old = sliderRef.current.scrollLeft
-        // const dx = e.clientX - position
-        // sliderRef.current.scrollLeft = dx
-        // setPosition(dx)
-      // setPosition( e.clientX)
-      sliderRef.current.scrollLeft +=  e.clientX - 273
-    }
 
-    const mouseUpHandler = function(e){
-        document.removeEventListener('mousemove', mouseMoveHandler)
-        document.removeEventListener('mouseup', mouseUpHandler)
-    }
 
+    let pos = {left: 0, x: 0, time: 0};
     const mouseDownHandler = function(e){
-        const f = e.clientX - 273
-        const newPos = f + position
-        setPosition( newPos )
-        console.log("new: ", position)
-      // setPosition(e.screenX)
+        // e.stopPropagation();
+        // e.nativeEvent.stopImmediatePropagation();
+        
+        pos.left = sliderRef.current.scrollLeft;
+        pos.x = e.clientX;
+        pos.time = new Date().getTime()
+   
+
+        const mouseMoveHandler = function(e){
+            const dx = e.clientX - pos.x;
+            sliderRef.current.scrollLeft = pos.left - dx;
+        }
+
+        const mouseUpHandler = function(e){       
+            controller = e.type
+            const amp = new Date().getTime();
+            const rest = amp - pos.time
+            pos.time = rest
+            e.stopPropagation();
+            document.removeEventListener('mousemove', mouseMoveHandler)
+            document.removeEventListener('mouseup', mouseUpHandler)
+        }
+
         document.addEventListener('mousemove', mouseMoveHandler)
         document.addEventListener('mouseup', mouseUpHandler)
     }
     //console.log('mouse',  position)
 
+    const clickHandler = function(e, day){
+
+        e.stopPropagation();
+        e.nativeEvent.stopImmediatePropagation();
+
+        setSelected(day)
+    }
+
     const sliderRef = useRef(null);
 
     const userPreferedFirstWeekday = 1;
-    
-
-    const todayIso = today.toISOString().split("T")[0]
-
-    const MM = date.getMonth();
-    const YY = date.getFullYear();
-    
-    const calendarMonth = fillMonth(MM, YY)
-    
+  
     const sliderLeft = () => {
         let slider = document.getElementById('slider')
         slider.scrollLeft = slider.scrollLeft  - (7 * w)
@@ -157,41 +167,45 @@ function Calendar() {
                     </button>
                 </div>
                 <div className='relative flex items-center justify-between'>
-                   <Button onclick={sliderLeft}>
+                    <Button onclick={sliderLeft}>
                         <AiOutlineLeft size={25}/>
                     </Button>
                     <div className="w-full flex flex-row gap-4 overflow-x-scroll pb-4 pl-2 pr-2 max-w-[810px] styled-scrollbar cursor-grabbing"
-                            id='slider'
                             ref={sliderRef}
                             onMouseDown={mouseDownHandler}
                             >
-                        {calendarMonth.map( (date, i) => {
-                            const d = new Date(date)
-                            const weekday = weekDays[d.getDay()]
-                            const day = d.getDate();
-                            let classes = "";
-                            if(date === todayIso){
-                                classes = 'text-red-600 font-semibold'
-                            }else{
-                                classes = 'font-light'
-                            }
-                            return <div 
-                                key={day} 
-                                // onClick={() => {
-                                //     setDayFocus(day)
-                                // }}
-                                dateTime={date}
-                                className={`p-8 border border-slate-900 flex flex-col items-center justify-center rounded-lg  min-w-[100px] ${classes}`}>
-                                    <p className="text-4xl">{day}</p> 
-                                    <p>{weekday}</p>   
-                            </div>
-                        } )
+                        {
+                            calendarMonth.map( (date, i) => {
+                                const d = new Date(date)
+                                const weekday = weekDays[d.getDay()]
+                                const day = d.getDate();
+                                let classes = "",
+                                    borderColor = "border-stone-300";
+                                if(day === selected) 
+                                    borderColor = 'border-emerald-500'
+                                if(date === todayIso){
+                                    classes = 'text-red-600 font-semibold'
+                                }else{
+                                    classes = 'font-light'
+                                }
+                                return <div 
+                                    key={day} 
+                                    onClick={(e) => clickHandler(e, day)}
+                                    dateTime={date}
+                                    className={`p-8 border ${borderColor} flex flex-col items-center justify-center rounded-lg  min-w-[100px] ${classes} select-none`}>
+                                        <p className="text-4xl">{day}</p> 
+                                        <p>{weekday}</p>   
+                                </div>
+                            })
                         }
                     </div>
                     <Button onclick={sliderRight}>
                        <AiOutlineRight size={25}/>
                     </Button>
                     
+                </div>
+                <div>
+                    Day selected: {selected}
                 </div>
             </div>
         </>
